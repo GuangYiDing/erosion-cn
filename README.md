@@ -75,14 +75,18 @@ chmod +x ipabuild.sh
 
 ## 致谢与开源许可 (Credits & License)
 
-本项目基于 **[GNU General Public License v3.0 (GPLv3)](./LICENSE)** 开源，谨向上游作者与社区研究者致谢：
+本项目基于 **[GNU General Public License v3.0 (GPLv3)](./LICENSE)** 开源，谨向上游作者与社区研究者致以诚挚感谢：
 
-- [jailbreakdotparty/Erosion](https://github.com/jailbreakdotparty/Erosion) & [lunginspector](https://github.com/lunginspector) — 上游主仓库与核心架构作者
-- [forcequitOS](https://github.com/forcequitOS) & [0xjohnnydev](https://github.com/0xjohnnydev) — `worse_query` 沙盒研究作者
-- [skadz108](https://github.com/skadz108) & [rooootdev](https://github.com/rooootdev) — 后端功能组件维护者
-- [neonmodder123](https://github.com/neonmodder123) — 免越狱注销方案作者
-- [PoomSmart — MGKeys](https://github.com/PoomSmart/MGKeys) — MobileGestalt 键值研究整理
-- [KirbySD](https://www.v2ex.com/t/1246550) & [huamidev — GestaltX](https://github.com/huamidev/GestaltX) — 本机系统库动态缓存描述符解析思路参考
+### 特别致谢（特性借鉴与研究参考）
+- **[huamidev / GestaltX](https://github.com/huamidev/GestaltX)** — 特别感谢 `GestaltX` 项目的优秀工程设计与思路启发，本分支的本机 `libMobileGestalt.dylib` 查询描述符动态偏移解析、变更对比预览（Diff Preview）、写后磁盘读回校验、运行时重签 `App Group` 自动探测以及液态玻璃低功耗渲染键值等改进均借鉴并参考了 `GestaltX` 的设计。
+- **[KirbySD](https://www.v2ex.com/t/1246550)** — 感谢分享 `MobileGestalt` 二进制 `CacheData` 中 `green-tea` / `not-green-tea` 布尔槽位的原始研究思路。
+- **[PoomSmart / MGKeys](https://github.com/PoomSmart/MGKeys)** — 感谢长期维护与整理 `MobileGestalt` 混淆键值映射表。
+
+### 上游主项目与漏洞研究致谢
+- **[jailbreakdotparty / Erosion](https://github.com/jailbreakdotparty/Erosion)** & **[lunginspector](https://github.com/lunginspector)** — 上游主仓库与核心架构作者
+- **[forcequitOS](https://github.com/forcequitOS)** & **[0xjohnnydev](https://github.com/0xjohnnydev)** — `worse_query` 沙盒研究作者
+- **[skadz108](https://github.com/skadz108)** & **[rooootdev](https://github.com/rooootdev)** — 后端功能组件维护者
+- **[neonmodder123](https://github.com/neonmodder123)** — 免越狱注销方案作者
 
 ---
 

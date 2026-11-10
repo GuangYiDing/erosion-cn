@@ -20,7 +20,9 @@ struct LinkCreditCell: View {
     
     var body: some View {
         Button {
-            if !url.isEmpty { openURL(URL(string: url)!) }
+            if !url.isEmpty, let targetURL = URL(string: url) {
+                openURL(targetURL)
+            }
         } label: {
             HStack(spacing: creditCell) {
                 if let image = image {
