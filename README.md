@@ -14,26 +14,32 @@
 
 ## 项目简介与核心改进
 
-**Erosion-CN** 分支衍生自官方上游项目 **[jailbreakdotparty/Erosion](https://github.com/jailbreakdotparty/Erosion)**，完成了 **100% 简体中文界面本地化**，并针对真机使用场景进行了系统级防白苹果安全加固与底层能力扩展：
+**Erosion-CN** 分支衍生自官方上游项目 **[jailbreakdotparty/Erosion](https://github.com/jailbreakdotparty/Erosion)**，完成了 **100% 简体中文界面本地化**，修复了原版多项严重真机 Bug，并进行了系统级防白苹果安全加固与底层能力扩展：
 
-1. **零 0 字节窗口原位写入协议（`pwrite` + 按需尾截断 + `F_FULLFSYNC`）**
-   - 彻底重构底层文件写入逻辑：不再先执行 `ftruncate(fd, 0)` 清空系统文件，而是直接从偏移 `0` 原位覆盖写入、写完后按需裁剪尾部，并调用 `fcntl(fd, F_FULLFSYNC)` 强制刷新 APFS 与物理闪存缓存，完整保留系统文件 Inode 与 POSIX 属主权限，重启不回弹、断电不留空文件。
-2. **写入前变更对比预览（Diff Preview）+ 写后全量读回校验与自动回滚**
+1. **修复重启后修改自动失效还原（反弹回原厂状态）的严重 Bug**
+   - 原版在未手动切换过设置开关时，`mgWriteAtomically` 默认返回 `false`，导致实际走了临时文件替换（`replaceItemAt`），破坏了系统缓存文件的 Inode 与 `_mobilegestalt` POSIX 属主权限，设备一重启即被系统丢弃重建；同时原版在 iOS 27 上额外注入了非缓存键 `RegionInfo`（`zHeENZu+wbg7PUprwNwBWg`），触发开机缓存合法性校验整包重置。
+   - 本分支已默认强制锁定原位覆盖写入，严格遵循 iOS 27 原厂缓存键结构，并自动匹配写入对应机型的监管型号（`RegulatoryModelNumber`），**真正做到持久化生效、重启不反弹**。
+2. **修复内置 Plist 编辑器破坏布尔值与相机浮点参数导致「相机黑屏」的严重 Bug**
+   - 原版 `PlistManager` 将 `CFBoolean`（`<true/>` / `<false/>`）以及整数值 `Double`（如相机变焦倍率 `1.0`、`2.0`、`5.0` 等）误判转换为了 `<integer>` 整型，导致编辑保存 `MobileGestalt` 后系统相机取景直接黑屏。
+   - 本分支改用 `CFBooleanGetTypeID()` 与 `CFNumberIsFloatType()` 精确识别底层 CoreFoundation 类型，保留原始 Plist 根类型与编码格式，并对未修改项执行 **100% 原样无损直通（Lossless Pass-through）**，彻底解决相机黑屏问题。
+3. **零 0 字节窗口原位写入协议（`pwrite` + 按需尾截断 + `F_FULLFSYNC`）**
+   - 重构底层文件 I/O：不再先执行 `ftruncate(fd, 0)` 清空系统文件，而是直接从偏移 `0` 原位覆盖写入、写完后按需裁剪尾部，并调用 `fcntl(fd, F_FULLFSYNC)` 强制刷新 APFS 与物理闪存缓存，断电或异常中断绝不留空文件。
+4. **写入前变更对比预览（Diff Preview）+ 写后全量读回校验与自动回滚**
    - 点击「应用」时逐条展示所有待修改键值与十六进制槽位对比（`修改前 → 修改后`）；
-   - 写入前自动保存 `PreApplyGestalt.plist` 快照，写入后立即从磁盘读回并做二进制 Plist 反序列化与严格类型校验（精确区分 `CFBoolean`、整型与浮点型，防止破坏相机变焦倍率等浮点参数），一旦校验异常立即自动原位回滚。
-3. **本机 `libMobileGestalt.dylib` 运行时动态偏移解析（零硬编码）**
+   - 写入前自动保存 `PreApplyGestalt.plist` 快照，写入后立即从磁盘读回并做二进制 Plist 反序列化与严格类型校验，一旦出现任何不一致立即自动原位回滚。
+5. **本机 `libMobileGestalt.dylib` 运行时动态偏移解析（零硬编码）**
    - 在设备运行时只读扫描内存中加载的 `/usr/lib/libMobileGestalt.dylib` 查询描述符表，实时计算当前机型与当前系统版本的 `CacheUUID`、总槽位数及布尔槽位偏移（`green-tea`、`not-green-tea`、`wapi`）；
    - **严格多重校验门控**：仅当本机 `CacheUUID` 唯一匹配、总长度精确等于 `槽位数 × 9`、有效位 `validity == 1`、8 字节槽位填充全为 `0` 且无任何无关字节变动时才允许修改；解析未通过时自动锁定开关并拦截写入。
-4. **跨机型 / 跨系统升级三重指纹防呆与云备份隔离**
+6. **跨机型 / 跨系统升级三重指纹防呆与云备份隔离**
    - 本地备份文件自动标记 `isExcludedFromBackup = true`，防止通过 iCloud / 电脑换机迁移时将旧设备的缓存备份带入新设备；
    - 还原原始备份时强制核对 `CacheVersion`、`CacheUUID` 与本机硬件 `ProductType`；系统 OTA 升级后首次打开可自动识别新版本构建号并提示刷新备份。
-5. **重签证书 `App Group` 自动探测与高危软砖项拆除**
+7. **重签证书 `App Group` 自动探测与高危软砖项拆除**
    - 运行时通过 `SecTaskCopyValueForEntitlement` 与纯 Swift Mach-O `LC_CODE_SIGNATURE` 签名段解析自动匹配任意重签工具注入的可用 `group.*` 容器；
    - 默认移除并拦截上游版本中存在软砖/无限设置向导隐患的高危功能（如 iPhone 正则盲改切片的 iPadOS 模式、个人零售设备的监管模式开关、非缓存键注入等）。
-6. **完善机型适配与实用工具优化**
-   - 补全 iPhone 15 / 16 / 17 / Air / 18 / Duo 全系列及 M 系列 iPad 监管型号映射与硬件特征表；
+8. **完善机型适配与实用工具优化**
+   - 补全 iPhone 15 / 16 / 17 / Air / 18 / Duo 全系列及 M 系列 iPad 监管型号映射与硬件特征表，修复原版“80% 充电上限”与“开机提示音”硬件判断互换笔误及自定义键值恒写入 `true` 的 Bug；
    - 新增 iOS 26/27「液态玻璃低功耗渲染（省电模式）」开关与机型外层描述同步；
-   - 修复文件浏览器搜索栏与高 Inode 容器扫描上限，新增核心缓存目录一键直达入口。
+   - 修复文件浏览器搜索栏失效与失焦清空问题，提升高 Inode 容器扫描上限并新增核心缓存目录 0 秒一键直达入口。
 
 ---
 
